@@ -1,0 +1,34 @@
+name = "maermin-skinport-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Deploy: the "Deploy to Cloudflare" button in the README, or `npx wrangler deploy`
+# in this folder (wrangler 4.45 or later).
+
+# E2E cloud sync (Epic 1) stores only ciphertext. No id: Cloudflare creates the
+# KV namespace on the first deploy and keeps it bound on later deploys.
+[[kv_namespaces]]
+binding = "SYNC"
+
+# Recommended: atomic sync. One Durable Object per account serialises the
+# revision check, so two devices syncing at once can't silently overwrite each
+# other (KV has no compare-and-set). Existing KV records are adopted on first
+# use. SQLite-backed Durable Objects are available on the free plan.
+[[durable_objects.bindings]]
+name = "SYNC_DO"
+class_name = "SyncRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SyncRoom"]
+
+# CORS: exact origins allowed to read responses (the official app and
+# localhost are built in). Add your own domain(s), comma separated.
+# Set ALLOW_NULL_ORIGIN = "false" if you don't use the desktop app.
+[vars]
+# ALLOWED_ORIGINS = "https://portfolio.example.com"
+ALLOW_NULL_ORIGIN = "true"
+# Optional: a free CoinGecko demo key raises the crypto price limit:
+#   npx wrangler secret put COINGECKO_API_KEY
+# Share snapshots per UTC day (each costs one KV write). Default 300.
+# SHARE_DAILY_MAX = "300"
